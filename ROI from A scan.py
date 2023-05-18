@@ -1,10 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import re
-from tkinter import Tk, filedialog, Button, Label, Frame, StringVar
+from tkinter import ttk, Tk, filedialog, Button, Label, Frame, StringVar
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-
 
 class Application(Frame):
     def __init__(self, master=None):
@@ -20,6 +19,7 @@ class Application(Frame):
         self.a_scan_bounds = (0, 0, 0, 0)  # (xmin, xmax, ymin, ymax)
         self.roi_lines = []  # Initialize the roi_lines list
         self.roi_texts = []  # Initialize the roi_texts list
+        self.measurements = []  # Initialize the measurements list
 
     def load_file(self):
         # Use the set method to change the value of file_path
@@ -76,36 +76,41 @@ class Application(Frame):
         self.canvas.draw()
 
     def add_roi(self):
-        print("Please click on two points on the plot to define the ROI")
+            print("Please click on two points on the plot to define the ROI")
 
-        def onclick(event):
-            if event.inaxes == self.axs[1]:
-                self.roi_points.append(int(event.xdata))
+            def onclick(event):
+                if event.inaxes == self.axs[1]:
+                    self.roi_points.append(int(event.xdata))
 
-                if len(self.roi_points) == 2:
-                    roi_start, roi_end = sorted(self.roi_points)
-                    self.roi_points = []
+                    if len(self.roi_points) == 2:
+                        roi_start, roi_end = sorted(self.roi_points)
+                        self.roi_points = []
 
-                    roi_range = np.arange(roi_start, roi_end + 1)
-                    fit = np.polyfit(roi_range, self.a_scan[roi_start:roi_end+1], 1)
+                        roi_range = np.arange(roi_start, roi_end + 1)
+                        fit = np.polyfit(roi_range, self.a_scan[roi_start:roi_end+1], 1)
 
-                    slope = fit[0]
-                    intercept = fit[1]
+                        slope = fit[0]
+                        intercept = fit[1]
 
-                    line_points = slope * roi_range + intercept
+                        line_points = slope * roi_range + intercept
 
-                    equation_text = f"y = {slope:.2f}x + {intercept:.2f}"
-                    
-                    text = self.axs[1].text(roi_start, self.a_scan[roi_start], f'Slope: {slope:.2f}\n{equation_text}', 
-                                color='red', va='top')
-                    self.roi_texts.append(text)
+                        equation_text = f"y = {slope:.2f}x + {intercept:.2f}"
+                        
+                        text = self.axs[1].text(roi_start, self.a_scan[roi_start], f'Slope: {slope:.2f}\n{equation_text}', 
+                                    color='red', va='top')
+                        self.roi_texts.append(text)
 
-                    line, = self.axs[1].plot(roi_range, line_points, 'r--', linewidth=2)
-                    self.roi_lines.append(line)
+                        line, = self.axs[1].plot(roi_range, line_points, 'r--', linewidth=2)
+                        self.roi_lines.append(line)
 
-                    self.fig.canvas.draw()
+                        # Append the new measurement
+                        self.measurements.append((len(self.measurements)+1, slope))
+                        # Update the table
+                        self.update_table()
 
-        self.cid = self.fig.canvas.mpl_connect('button_press_event', onclick)
+                        self.fig.canvas.draw()
+
+            self.cid = self.fig.canvas.mpl_connect('button_press_event', onclick)
 
     def remove_roi(self):
         if self.roi_lines:
@@ -121,9 +126,18 @@ class Application(Frame):
             # Disconnect the 'button_press_event'
             self.fig.canvas.mpl_disconnect(self.cid)
 
+    def update_table(self):
+        # Clear the table
+        for i in self.table.get_children():
+            self.table.delete(i)
+
+        # Add new items to the table
+        for measurement in self.measurements:
+            self.table.insert('', 'end', values=measurement)
+
     def create_widgets(self):
-    # Creating a frame for the buttons
-        root.resizable(True, True)
+        # Creating a frame for the buttons
+        self.master.resizable(True, True)
 
         self.button_frame = Frame(self)
         self.button_frame.grid(row=0, column=0, sticky='n')  # Place the frame at the top of column 0
@@ -137,18 +151,14 @@ class Application(Frame):
         # Creating the "Choose ROI" button
         self.roi_button = Button(self.button_frame, width=10)  # Set the width of the button
         self.roi_button["text"] = "Choose ROI"
-        # Connect this button to the function that will handle the "Choose ROI" action
-        # self.roi_button["command"] = choose_roi
+        self.roi_button["command"] = self.add_roi
         self.roi_button.grid(row=1, column=0)  # Set the position of the button
 
         # Creating the "Remove ROI" button
         self.remove_roi_button = Button(self.button_frame, width=10)  # Set the width of the button
         self.remove_roi_button["text"] = "Remove ROI"
         self.remove_roi_button["command"] = self.remove_roi
-        # Connect this button to the function that will handle the "Remove ROI" action
-        # self.remove_roi_button["command"] = remove_roi
         self.remove_roi_button.grid(row=2, column=0)  # Set the position of the button
-
 
         # Creating the Frame for the image and the A-scan plot
         self.plot_frame = Frame(self)
@@ -166,12 +176,26 @@ class Application(Frame):
         toolbar = NavigationToolbar2Tk(self.canvas, self.plot_frame)
         toolbar.update()
 
-        # Add the "Choose ROI" button
-        self.roi_button["command"] = self.add_roi
-
         # Add a label to display the slope
         self.slope_label = Label(self, text="Slope: ")
         self.slope_label.grid(row=3, column=0)
+
+        # Creating a table for the measurements
+        self.table = ttk.Treeview(self, columns=('Measurement', 'Slope'), show='headings')
+        self.table.column('Measurement', width=100, anchor='center')
+        self.table.column('Slope', width=100, anchor='center')
+        self.table.heading('Measurement', text='Measurement')
+        self.table.heading('Slope', text='Slope')
+        self.table.grid(row=3, column=1, sticky='nsew')  # Place the table below the buttons
+
+        # Configure weights (this might vary according to your layout)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_rowconfigure(3, weight=1)
+
 
     def on_closing(self):
         plt.close("all")  # Close all Matplotlib figures
