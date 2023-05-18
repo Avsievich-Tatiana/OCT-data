@@ -125,6 +125,10 @@ class Application(Frame):
             # Disconnect the 'button_press_event'
             self.fig.canvas.mpl_disconnect(self.cid)
 
+            if self.measurements:  # Check if there are any measurements
+                self.measurements.pop()  # Remove the last measurement from the list
+                self.update_table()  # Update the table
+
     def update_table(self):
         # Clear the table
         for i in self.table.get_children():
@@ -185,11 +189,11 @@ class Application(Frame):
         self.slope_label.grid(row=3, column=0)
 
         # Creating a table for the measurements
-        self.table = ttk.Treeview(self.button_frame, columns=('Measurement', 'Slope'), show='headings')
+        self.table = ttk.Treeview(self.button_frame, columns=('Measurement', 'Attenuation coef'), show='headings')
         self.table.column('Measurement', width=100, anchor='center')
-        self.table.column('Slope', width=100, anchor='center')
+        self.table.column('Attenuation coef', width=100, anchor='center')
         self.table.heading('Measurement', text='Measurement')
-        self.table.heading('Slope', text='Slope')
+        self.table.heading('Attenuation coef', text='Attenuation coef')
         self.table.grid(row=4, column=0, sticky='nsew')  # Place the table below the buttons
 
 
