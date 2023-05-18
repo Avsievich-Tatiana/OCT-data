@@ -71,7 +71,6 @@ class Application(Frame):
         # Get the bounds of the A-scan plot
         self.a_scan_bounds = self.axs[1].get_xlim() + self.axs[1].get_ylim()  # (xmin, xmax, ymin, ymax)
 
-
         # Draw the figures on the canvas
         self.canvas.draw()
 
@@ -140,7 +139,7 @@ class Application(Frame):
         self.master.resizable(True, True)
 
         self.button_frame = Frame(self)
-        self.button_frame.grid(row=0, column=0, sticky='n')  # Place the frame at the top of column 0
+        self.button_frame.grid(row=0, column=0, sticky='n', rowspan=4)  # Place the frame at the top of column 0
 
         # Creating the "Open" button
         self.open_button = Button(self.button_frame, width=10)  # Set the width of the button
@@ -162,7 +161,7 @@ class Application(Frame):
 
         # Creating the Frame for the image and the A-scan plot
         self.plot_frame = Frame(self)
-        self.plot_frame.grid(row=0, column=1, rowspan=3)
+        self.plot_frame.grid(row=0, column=1, rowspan=4)
 
         # Creating the Figure and axes for the image and the A-scan plot
         self.fig, self.axs = plt.subplots(2, 1, figsize=(8, 10))
@@ -177,24 +176,16 @@ class Application(Frame):
         toolbar.update()
 
         # Add a label to display the slope
-        self.slope_label = Label(self, text="Slope: ")
+        self.slope_label = Label(self.button_frame, text="Slope: ")
         self.slope_label.grid(row=3, column=0)
 
         # Creating a table for the measurements
-        self.table = ttk.Treeview(self, columns=('Measurement', 'Slope'), show='headings')
+        self.table = ttk.Treeview(self.button_frame, columns=('Measurement', 'Slope'), show='headings')
         self.table.column('Measurement', width=100, anchor='center')
         self.table.column('Slope', width=100, anchor='center')
         self.table.heading('Measurement', text='Measurement')
         self.table.heading('Slope', text='Slope')
-        self.table.grid(row=3, column=1, sticky='nsew')  # Place the table below the buttons
-
-        # Configure weights (this might vary according to your layout)
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
-        self.grid_rowconfigure(2, weight=1)
-        self.grid_rowconfigure(3, weight=1)
+        self.table.grid(row=4, column=0, sticky='nsew')  # Place the table below the buttons
 
 
     def on_closing(self):
