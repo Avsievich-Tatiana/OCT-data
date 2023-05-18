@@ -134,6 +134,11 @@ class Application(Frame):
         for measurement in self.measurements:
             self.table.insert('', 'end', values=measurement)
 
+        # Calculate the average slope
+        if self.measurements:  # Check if the measurements list is not empty
+            avg_slope = sum([item[1] for item in self.measurements]) / len(self.measurements)
+            self.table.insert('', 'end', values=("Average", avg_slope))  # Insert the average as the last row
+
     def create_widgets(self):
         # Creating a frame for the buttons
         self.master.resizable(True, True)
