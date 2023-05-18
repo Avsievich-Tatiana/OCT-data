@@ -4,6 +4,7 @@ import re
 from tkinter import ttk, Tk, filedialog, Button, Label, Frame, StringVar
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.widgets import Cursor
 
 class Application(Frame):
     def __init__(self, master=None):
@@ -76,6 +77,11 @@ class Application(Frame):
 
     def add_roi(self):
             print("Please click on two points on the plot to define the ROI")
+
+
+            self.cursor = Cursor(self.axs[1], useblit=True, color='red', linewidth=1)
+            self.fig.canvas.draw()
+
 
             def onclick(event):
                 if event.inaxes == self.axs[1]:
