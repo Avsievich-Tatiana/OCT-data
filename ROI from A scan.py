@@ -21,6 +21,10 @@ class Application(Frame):
         self.roi_lines = []  # Initialize the roi_lines list
         self.roi_texts = []  # Initialize the roi_texts list
         self.measurements = []  # Initialize the measurements list
+        self.Z = 0
+
+        # Initialize self.a_scan
+        self.a_scan = None
 
     def load_file(self):
         # Use the set method to change the value of file_path
@@ -33,7 +37,7 @@ class Application(Frame):
         if match:
             X = int(match.group(1))
             frames = int(match.group(2))
-            Z = int(match.group(3))
+            self.Z = int(match.group(3))
         else:
             raise ValueError("Could not extract dimensions from the file name")
 
@@ -42,7 +46,7 @@ class Application(Frame):
             a = np.fromfile(f, dtype='float64')
 
         # Reshape data into 3D array
-        b = a.reshape((Z, X, frames), order='F')
+        b = a.reshape((self.Z, X, frames), order='F')
 
         # Calculate average image
         img_avg = np.mean(b, axis=2)
@@ -56,18 +60,24 @@ class Application(Frame):
         self.axs[0].clear()
         self.axs[1].clear()
 
+        # convert px to um
+        x_um = np.linspace(0, 1474, X)
+        z_um = np.linspace(0, 1474, self.Z)
+
         # Plot averaged image on the first subplot
-        self.axs[0].imshow(img_avg, cmap='gray')
+        im = self.axs[0].imshow(img_avg, cmap='gray', extent=[x_um.min(), x_um.max(), z_um.max(), z_um.min()])
         self.axs[0].set_title('Averaged image')
-        self.axs[0].set_xlabel('X')
-        self.axs[0].set_ylabel('Depth (Z)')
+        self.axs[0].set_xlabel('X (um)')
+        self.axs[0].set_ylabel('Depth (Z) (um)')
 
         # Plot A-scan on the second subplot
-        self.axs[1].plot(range(Z), a_scan)
+        self.axs[1].plot(z_um, a_scan)
         self.axs[1].grid(True)  # Add grid to the A-scan plot
         self.axs[1].set_title('Summed A-scan')
-        self.axs[1].set_xlabel('Depth (Z)')
+        self.axs[1].set_xlabel('Depth (Z) (um)')
         self.axs[1].set_ylabel('Intensity')
+
+
 
         # Get the bounds of the A-scan plot
         self.a_scan_bounds = self.axs[1].get_xlim() + self.axs[1].get_ylim()  # (xmin, xmax, ymin, ymax)
@@ -81,39 +91,45 @@ class Application(Frame):
 
             self.cursor = Cursor(self.axs[1], useblit=True, color='red', linewidth=1)
             self.fig.canvas.draw()
+            # Activate the cursor
+            self.cursor.set_active(True)
 
 
             def onclick(event):
                 if event.inaxes == self.axs[1]:
                     self.roi_points.append(int(event.xdata))
 
-                    if len(self.roi_points) == 2:
-                        roi_start, roi_end = sorted(self.roi_points)
-                        self.roi_points = []
+                if len(self.roi_points) == 2:
+                    roi_start, roi_end = sorted(self.roi_points)
+                    self.roi_points = []
 
-                        roi_range = np.arange(roi_start, roi_end + 1)
-                        fit = np.polyfit(roi_range, self.a_scan[roi_start:roi_end+1], 1)
+                    roi_start_px = int(roi_start * self.Z / 1474)  
+                    roi_end_px = int(roi_end * self.Z / 1474) 
 
-                        slope = fit[0]
-                        intercept = fit[1]
+                    roi_range = np.linspace(roi_start, roi_end, roi_end_px - roi_start_px + 1)
+                    fit = np.polyfit(roi_range, self.a_scan[roi_start_px:roi_end_px+1], 1)
 
-                        line_points = slope * roi_range + intercept
+                    slope = fit[0]
+                    intercept = fit[1]
 
-                        equation_text = f"y = {slope:.2f}x + {intercept:.2f}"
-                        
-                        text = self.axs[1].text(roi_start, self.a_scan[roi_start], f'Slope: {slope:.2f}\n{equation_text}', 
-                                    color='red', va='top')
-                        self.roi_texts.append(text)
+                    line_points = slope * roi_range + intercept
 
-                        line, = self.axs[1].plot(roi_range, line_points, 'r--', linewidth=2)
-                        self.roi_lines.append(line)
+                    equation_text = f"y = {slope:.2f}x + {intercept:.2f}"
 
-                        # Append the new measurement
-                        self.measurements.append((len(self.measurements)+1, slope))
-                        # Update the table
-                        self.update_table()
+                    text = self.axs[1].text(roi_start, self.a_scan[roi_start_px], f'Slope: {slope:.2f}\n{equation_text}', 
+                                            color='red', va='top')
+                    self.roi_texts.append(text)
 
-                        self.fig.canvas.draw()
+                    line, = self.axs[1].plot(roi_range, line_points, 'r--', linewidth=2)
+                    self.roi_lines.append(line)
+
+                    # Append the new measurement
+                    self.measurements.append((len(self.measurements)+1, slope))
+                    # Update the table
+                    self.update_table()
+
+                    self.fig.canvas.draw()
+
 
             self.cid = self.fig.canvas.mpl_connect('button_press_event', onclick)
 
@@ -125,6 +141,9 @@ class Application(Frame):
             if self.roi_texts:  # Check if there are any texts
                 text = self.roi_texts.pop()  # Remove the last text from the list
                 text.remove()  # Remove the text from the plot
+
+            # Deactivate the cursor
+            self.cursor.set_active(False)
 
             self.fig.canvas.draw()  # Update the plot
 
@@ -184,11 +203,16 @@ class Application(Frame):
         # Creating the canvas for the image and the A-scan plot
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.plot_frame)  # A tk.DrawingArea.
         self.canvas.draw()
-        self.canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
+        
 
         # Add the toolbar
         toolbar = NavigationToolbar2Tk(self.canvas, self.plot_frame)
         toolbar.update()
+        self.canvas.get_tk_widget().pack(side="top", fill="both", expand=True) #PROBLEMOOOOOO
+
+        # Create the cursor
+        self.cursor = Cursor(self.axs[1], useblit=True, color='red', linewidth=1)
+        self.cursor.set_active(False)  # Deactivate the cursor
 
         # Add a label to display the slope
         self.slope_label = Label(self.button_frame, text="Slope: ")
