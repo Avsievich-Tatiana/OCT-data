@@ -21,7 +21,6 @@ class Application(Frame):
         self.roi_lines = []  # Initialize the roi_lines list
         self.roi_texts = []  # Initialize the roi_texts list
         self.measurements = []  # Initialize the measurements list
-        self.Z = 0
 
         # Initialize self.a_scan
         self.a_scan = None
@@ -37,7 +36,7 @@ class Application(Frame):
         if match:
             X = int(match.group(1))
             frames = int(match.group(2))
-            self.Z = int(match.group(3))
+            Z = int(match.group(3))
         else:
             raise ValueError("Could not extract dimensions from the file name")
 
@@ -46,7 +45,7 @@ class Application(Frame):
             a = np.fromfile(f, dtype='float64')
 
         # Reshape data into 3D array
-        b = a.reshape((self.Z, X, frames), order='F')
+        b = a.reshape((Z, X, frames), order='F')
 
         # Calculate average image
         img_avg = np.mean(b, axis=2)
@@ -60,22 +59,18 @@ class Application(Frame):
         self.axs[0].clear()
         self.axs[1].clear()
 
-        # convert px to um
-        x_um = np.linspace(0, 3000, X)
-        z_um = np.linspace(0, 1474, self.Z)
-
         # Plot averaged image on the first subplot
-        im = self.axs[0].imshow(img_avg, cmap='gray', extent=[x_um.min(), x_um.max(), z_um.max(), z_um.min()])
-        self.axs[0].set_title('OCT image')
-        self.axs[0].set_xlabel('Width (um)')
-        self.axs[0].set_ylabel('Optical depth (um)')
+        self.axs[0].imshow(img_avg, cmap='gray')
+        self.axs[0].set_title('Averaged image')
+        self.axs[0].set_xlabel('X')
+        self.axs[0].set_ylabel('Depth (Z)')
 
         # Plot A-scan on the second subplot
-        self.axs[1].plot(z_um, a_scan)
+        self.axs[1].plot(range(Z), a_scan)
         self.axs[1].grid(True)  # Add grid to the A-scan plot
-        self.axs[1].set_title('A-scan')
-        self.axs[1].set_xlabel('Optical depth (um)')
-        self.axs[1].set_ylabel('Intensity (a.u.)')
+        self.axs[1].set_title('Summed A-scan')
+        self.axs[1].set_xlabel('Depth (Z)')
+        self.axs[1].set_ylabel('Intensity')
 
         # Get the bounds of the A-scan plot
         self.a_scan_bounds = self.axs[1].get_xlim() + self.axs[1].get_ylim()  # (xmin, xmax, ymin, ymax)
@@ -97,37 +92,33 @@ class Application(Frame):
                 if event.inaxes == self.axs[1]:
                     self.roi_points.append(int(event.xdata))
 
-                if len(self.roi_points) == 2:
-                    roi_start, roi_end = sorted(self.roi_points)
-                    self.roi_points = []
+                    if len(self.roi_points) == 2:
+                        roi_start, roi_end = sorted(self.roi_points)
+                        self.roi_points = []
 
-                    roi_start_px = int(roi_start * self.Z / 1474)  
-                    roi_end_px = int(roi_end * self.Z / 1474) 
+                        roi_range = np.arange(roi_start, roi_end + 1)
+                        fit = np.polyfit(roi_range, self.a_scan[roi_start:roi_end+1], 1)
 
-                    roi_range = np.linspace(roi_start, roi_end, roi_end_px - roi_start_px + 1)
-                    fit = np.polyfit(roi_range, self.a_scan[roi_start_px:roi_end_px+1], 1)
+                        slope = fit[0]
+                        intercept = fit[1]
 
-                    slope = fit[0]
-                    intercept = fit[1]
+                        line_points = slope * roi_range + intercept
 
-                    line_points = slope * roi_range + intercept
+                        equation_text = f"y = {slope:.2f}x + {intercept:.2f}"
+                        
+                        text = self.axs[1].text(roi_start, self.a_scan[roi_start], f'Slope: {slope:.2f}\n{equation_text}', 
+                                    color='red', va='top')
+                        self.roi_texts.append(text)
 
-                    equation_text = f"y = {slope:.2f}x + {intercept:.2f}"
+                        line, = self.axs[1].plot(roi_range, line_points, 'r--', linewidth=2)
+                        self.roi_lines.append(line)
 
-                    text = self.axs[1].text(roi_start, self.a_scan[roi_start_px], f'Slope: {slope:.2f}\n{equation_text}', 
-                                            color='red', va='top')
-                    self.roi_texts.append(text)
+                        # Append the new measurement
+                        self.measurements.append((len(self.measurements)+1, slope))
+                        # Update the table
+                        self.update_table()
 
-                    line, = self.axs[1].plot(roi_range, line_points, 'r--', linewidth=2)
-                    self.roi_lines.append(line)
-
-                    # Append the new measurement
-                    self.measurements.append((len(self.measurements)+1, slope))
-                    # Update the table
-                    self.update_table()
-
-                    self.fig.canvas.draw()
-
+                        self.fig.canvas.draw()
 
             self.cid = self.fig.canvas.mpl_connect('button_press_event', onclick)
 
@@ -161,16 +152,10 @@ class Application(Frame):
         for measurement in self.measurements:
             self.table.insert('', 'end', values=measurement)
 
-        # Calculate the average slope and standard deviation
-            if self.measurements:  # Check if the measurements list is not empty
-                slopes = [item[1] for item in self.measurements]
-                avg_slope = np.mean(slopes)
-                std_dev = np.std(slopes)
-
-        # Format the average and standard deviation for display
-        avg_slope_display = f"{avg_slope:.2f} ± {std_dev:.2f}"
-
-        self.table.insert('', 'end', values=("Average", avg_slope_display))
+        # Calculate the average slope
+        if self.measurements:  # Check if the measurements list is not empty
+            avg_slope = sum([item[1] for item in self.measurements]) / len(self.measurements)
+            self.table.insert('', 'end', values=("Average", avg_slope))  # Insert the average as the last row
 
     def create_widgets(self):
         # Creating a frame for the buttons
@@ -212,7 +197,7 @@ class Application(Frame):
         # Add the toolbar
         toolbar = NavigationToolbar2Tk(self.canvas, self.plot_frame)
         toolbar.update()
-        self.canvas.get_tk_widget().pack(side="top", fill="both", expand=True) #Fixed
+        self.canvas.get_tk_widget().pack(side="top", fill="both", expand=True) #PROBLEMOOOOOO
 
         # Create the cursor
         self.cursor = Cursor(self.axs[1], useblit=True, color='red', linewidth=1)
@@ -224,8 +209,8 @@ class Application(Frame):
 
         # Creating a table for the measurements
         self.table = ttk.Treeview(self.button_frame, columns=('Measurement', 'Attenuation coef'), show='headings')
-        self.table.column('Measurement', width=80, anchor='center')
-        self.table.column('Attenuation coef', width=80, anchor='center')
+        self.table.column('Measurement', width=100, anchor='center')
+        self.table.column('Attenuation coef', width=100, anchor='center')
         self.table.heading('Measurement', text='Measurement')
         self.table.heading('Attenuation coef', text='Attenuation coef')
         self.table.grid(row=4, column=0, sticky='nsew')  # Place the table below the buttons
