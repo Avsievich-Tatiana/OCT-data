@@ -1,6 +1,6 @@
 # OCT-data
-Simple processing of A-scans to retrieve the attenuation coefficients of materials measured with OCT.
-This Python script is an open source alternaitve to the usage of MATLAB or OriginPro Lab.
+Simple processing of OCT images (a cross-section of the sample) to retrieve the attenuation coefficients from the corresponding A-scans.
+This Python script is an open source alternative of MATLAB or OriginPro functions used in OCT analysis.
 
 This Python script is a graphical user interface (GUI) application used for viewing and analyzing Optical Coherence Tomography (OCT) images. It provides functionality to load OCT data, display the average image and its corresponding A-scan, define Regions of Interest (ROIs), calculate the linear fit within each ROI, and remove the ROIs.
 
