@@ -3,7 +3,7 @@ simple processing of A-scans to retrieve the attenuation coefficients of materia
 
 This Python script is a graphical user interface (GUI) application used for viewing and analyzing Optical Coherence Tomography (OCT) images. It provides functionality to load OCT data, display the average image and its corresponding A-scan, define Regions of Interest (ROIs), calculate the linear fit within each ROI, and remove the ROIs.
 
-Features
+# Features
 Load OCT data from a file
 Display OCT images
 Visualize the average image and its corresponding A-scan
@@ -17,5 +17,24 @@ NumPy
 Matplotlib
 Tkinter
 re
-Usage
+
+# Usage
 To run the script, use the following command:
+
+When the GUI starts, you can interact with it as follows:
+
+1. Click the Open button to load an OCT data file.
+2. The program will display the average OCT image and its corresponding A-scan.
+3. Click the Choose ROI button and then click on two points on the A-scan plot to define the ROI.
+4. The program will calculate a linear fit within the defined ROI, display it on the A-scan plot, and add the slope to a table of measurements.
+5. Click the Remove ROI button to remove the last defined ROI and update the table of measurements.
+
+# Notes
+This script expects the OCT data to be stored in a binary file of 64-bit floating point numbers.
+The script assumes that the dimensions of the data (X, Y, Z) are included in the file name in the format 'X# Y# Z#', where # is the dimension size.
+The size of the ROI is determined by the two points that you click on the A-scan plot after clicking the Choose ROI button.
+The program uses a simple linear fit (y = mx + b) to calculate the slope within each ROI.
+The table of measurements shows the slope for each defined ROI, and the average slope ± standard deviation for all defined ROIs.
+
+# Disclaimer
+This script is provided as-is, and the accuracy and completeness of the calculations are not guaranteed. Always verify the results independently.
