@@ -22,10 +22,11 @@ This Python script is a graphical user interface (GUI) application used for view
 
 # Usage
 To run the script, use the following command:
+python oct_analysis.py
 
 When the GUI starts, you can interact with it as follows:
 
-1. Click the Open button to load an OCT data .dat file.
+1. Click the Open button to load an OCT data .dat file (example is in OCT data folder).
 2. The program will display the OCT image and its corresponding A-scan (depth profile).
 3. Click the Choose ROI button and then click on two points on the A-scan plot to define the ROI.
 4. The program will calculate a linear fit within the defined ROI, display it on the A-scan plot, and add the slope to a table of measurements.
