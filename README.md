@@ -12,13 +12,13 @@ This Python script is a graphical user interface (GUI) application used for view
 - Calculate the linear fit within each ROI
 - Remove the defined ROIs
 - Display a table of calculated measurements
-- 
+
 # Required Libraries
-Python (version 3.x recommended)
-NumPy
-Matplotlib
-Tkinter
-re
+- Python (version 3.x recommended)
+- NumPy
+- Matplotlib
+- Tkinter
+- re
 
 # Usage
 To run the script, use the following command:
