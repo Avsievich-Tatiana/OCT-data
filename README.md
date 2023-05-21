@@ -1,17 +1,19 @@
 # OCT-data
-simple processing of A-scans to retrieve the attenuation coefficients of materials
+Simple processing of A-scans to retrieve the attenuation coefficients of materials measured with OCT.
+This Python script is an open source alternaitve to the usage of MATLAB or OriginPro Lab.
 
 This Python script is a graphical user interface (GUI) application used for viewing and analyzing Optical Coherence Tomography (OCT) images. It provides functionality to load OCT data, display the average image and its corresponding A-scan, define Regions of Interest (ROIs), calculate the linear fit within each ROI, and remove the ROIs.
 
 # Features
-Load OCT data from a file
-Display OCT images
-Visualize the average image and its corresponding A-scan
-Define Regions of Interest (ROI) on the A-scan
-Calculate the linear fit within each ROI
-Remove the defined ROIs
-Display a table of calculated measurements
-Required Libraries
+- Load OCT data from a file
+- Display OCT images
+- Visualize the average image and its corresponding A-scan
+- Define Regions of Interest (ROI) on the A-scan
+- Calculate the linear fit within each ROI
+- Remove the defined ROIs
+- Display a table of calculated measurements
+- 
+# Required Libraries
 Python (version 3.x recommended)
 NumPy
 Matplotlib
@@ -23,11 +25,12 @@ To run the script, use the following command:
 
 When the GUI starts, you can interact with it as follows:
 
-1. Click the Open button to load an OCT data file.
-2. The program will display the average OCT image and its corresponding A-scan.
+1. Click the Open button to load an OCT data .dat file.
+2. The program will display the OCT image and its corresponding A-scan (depth profile).
 3. Click the Choose ROI button and then click on two points on the A-scan plot to define the ROI.
 4. The program will calculate a linear fit within the defined ROI, display it on the A-scan plot, and add the slope to a table of measurements.
 5. Click the Remove ROI button to remove the last defined ROI and update the table of measurements.
+6. The slope value of the liner fit of the A-scan gives a physical value of the attenuation coefficient of the sample.
 
 # Notes
 This script expects the OCT data to be stored in a binary file of 64-bit floating point numbers.
