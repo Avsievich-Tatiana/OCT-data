@@ -1,7 +1,8 @@
+#Import modules 
 import numpy as np
 import matplotlib.pyplot as plt
 import re
-from tkinter import ttk, Tk, filedialog, Button, Label, Frame, StringVar
+from tkinter import ttk, Tk, filedialog, Button, Label, Frame, StringVar # classes and functions
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.widgets import Cursor
