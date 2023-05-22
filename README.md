@@ -22,7 +22,7 @@ This Python script is a graphical user interface (GUI) application used for view
 
 # Usage
 To run the script, use the following command:
-python oct_analysis.py
+`python oct_analysis.py`
 
 When the GUI starts, you can interact with it as follows:
 
