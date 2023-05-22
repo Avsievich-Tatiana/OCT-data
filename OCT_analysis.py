@@ -213,7 +213,6 @@ class Application(Frame):
         plt.close("all")  # Close all Matplotlib figures
         self.master.destroy()  # Destroy the tkinter window
 
-
 root = Tk()
 app = Application(master=root)
 app.mainloop()
